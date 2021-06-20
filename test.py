@@ -1,4 +1,4 @@
-#%%
+#%% Imports
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import Model
@@ -18,7 +18,8 @@ import pandas as pd
 import numpy as np
 import string, os 
 
-#%%
+print ("Imports complete...")
+#%% Data Cleaning and Dataset Generation
 import pandas as pd
 data = pd.read_csv("emails.csv", nrows = 1000)
 pd.set_option('display.max_colwidth', None) # -1 max_colwidth deprecated
@@ -42,7 +43,7 @@ data['msg'] = data["msg"].apply(lambda val: val.replace("\n",' '))
 
 # Lets look only at emails with 100 words or less and that are Non-replies
 view = data[(data['msg'].str.len() <100) & ~(data['subject'].str.contains('Re:'))]
-#%%
+
 # remove rows containing links
 regex = "(http|https)://"
 view = view[~(view.msg.str.contains(regex))]
@@ -50,11 +51,11 @@ view = view[~(view.msg.str.contains(regex))]
 # save msgs as txt
 to_csv(r'c:\data\pandas.txt', header=None, index=None, sep=' ', mode='a')
 
-#%%
 file = open("./sample_data/dataset.txt", 'r')
 corpus = [line for line in file]
+print ("Data cleaning and dataset generation complete...")
 corpus[40:50]
-#%%
+#%% Load Data Pre-Processing Functions
 def clean_special_chars(text, punct):
     for p in punct:
         text = text.replace(p, '')
@@ -119,7 +120,8 @@ def load_dataset():
     output_data = tf.keras.preprocessing.sequence.pad_sequences(output_data, maxlen=max_length_out, padding="post")
     return input_data, output_data, in_lang, out_lang, max_length_in, max_length_out, df
 
-#%%
+print ("Data preprocessing functions loaded...")
+#%% Data pre-processing
 input_data, teacher_data, input_lang, target_lang, len_input, len_target, df = load_dataset()
 
 
@@ -135,7 +137,8 @@ input_data = input_data[p]
 teacher_data = teacher_data[p]
 target_data = target_data[p]
 
-#%%
+print ("Data pre-processing complete...")
+#%% Load Model Params
 pd.set_option('display.max_colwidth', -1)
 BUFFER_SIZE = len(input_data)
 BATCH_SIZE = 128
@@ -145,7 +148,8 @@ vocab_in_size = len(input_lang.word2idx)
 vocab_out_size = len(target_lang.word2idx)
 # df.iloc[60:65]
 
-#%% model
+print ("Model parameters loaded...")
+#%% Compile Model
 # Create the Encoder layers first.
 encoder_inputs = Input(shape=(len_input,))
 encoder_emb = Embedding(input_dim=vocab_in_size, output_dim=embedding_dim)
@@ -180,9 +184,10 @@ model = Model(inputs = [encoder_inputs, decoder_inputs], outputs= decoder_out)
 # Adam is used because it's, well, the best.
 
 model.compile(optimizer=tf.train.AdamOptimizer(), loss="sparse_categorical_crossentropy", metrics=['sparse_categorical_accuracy'])
+print ("Model successfully compiled...")
 model.summary()
 
-#%%
+#%% Train Model
 # Note, we use 20% of our data for validation.
 epochs = 10
 history = model.fit([input_data, teacher_data], target_data,
@@ -190,7 +195,8 @@ history = model.fit([input_data, teacher_data], target_data,
                  epochs=epochs,
                  validation_split=0.2)
 
-#%%
+print ("Model successfuly trained...")
+#%% Plot training history
 # Plot the results of the training.
 import matplotlib.pyplot as plt
 
@@ -198,7 +204,7 @@ plt.plot(history.history['loss'], label="Training loss")
 plt.plot(history.history['val_loss'], label="Validation loss")
 plt.show()
 
-#%%
+#%% Create inference model
 # Create the encoder model from the tensors we previously declared.
 encoder_model = Model(encoder_inputs, [encoder_out, state_h, state_c])
 
@@ -216,7 +222,7 @@ inf_decoder_out = decoder_d2(decoder_d1(decoder_res))
 inf_model = Model(inputs=[inf_decoder_inputs, state_input_h, state_input_c], 
                   outputs=[inf_decoder_out, decoder_h, decoder_c])
 
-#%%
+#%% Model test inference functions
 # Converts the given sentence (just a string) into a vector of word IDs
 # Output is 1-D: [timesteps/words]
 
@@ -254,10 +260,11 @@ def translate(input_sentence, infenc_model, infmodel):
         cur_word = target_lang.idx2word[np.argmax(nvec[0,0])]
     return output_sentence
 
-#%% test
+print ("Model testing functions loaded...")
+#%% Test Inference
 #Note that only words that we've trained the model on will be available, otherwise you'll get an error.
 
-
+print ("Running test inference...")
 test = [
     'hi there',
     'hell',
@@ -286,7 +293,7 @@ for t in test:
 results_df = pd.DataFrame.from_dict(output) 
 results_df.head(len(test))
 
-#%%
+#%% Saving Model
 # This is to save the model for the web app to use for generation
 from keras.models import model_from_json
 from keras.models import load_model
@@ -301,3 +308,5 @@ with open("./sample_data/model_num.json", "w") as json_file:
 
 # serialize weights to HDF5
 inf_model.save_weights("./sample_data/model_num.h5")
+
+print ("Model successfuly saved...")
