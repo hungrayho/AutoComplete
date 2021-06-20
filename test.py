@@ -21,7 +21,7 @@ import string, os
 #%%
 import pandas as pd
 data = pd.read_csv("emails.csv", nrows = 1000)
-pd.set_option('display.max_colwidth',-1)
+pd.set_option('display.max_colwidth', None) # -1 max_colwidth deprecated
 new = data["message"].str.split("\n", n = 15, expand = True) 
 
 data["from"] = new[2]
@@ -41,7 +41,15 @@ data['subject'] = data["subject"].apply(lambda val: val.replace("Subject:",''))
 data['msg'] = data["msg"].apply(lambda val: val.replace("\n",' '))
 
 # Lets look only at emails with 100 words or less and that are Non-replies
-data[(data['msg'].str.len() <100) & ~(data['subject'].str.contains('Re:'))].sample(5)
+view = data[(data['msg'].str.len() <100) & ~(data['subject'].str.contains('Re:'))]
+#%%
+# remove rows containing links
+regex = "(http|https)://"
+view = view[~(view.msg.str.contains(regex))]
+
+# save msgs as txt
+to_csv(r'c:\data\pandas.txt', header=None, index=None, sep=' ', mode='a')
+
 #%%
 file = open("./sample_data/dataset.txt", 'r')
 corpus = [line for line in file]
