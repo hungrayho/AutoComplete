@@ -6,6 +6,7 @@ from tensorflow.keras.layers import Input, LSTM, Dense, Embedding, Flatten, Time
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.keras import backend as K
+from tensorflow.compat.v1.keras.layers import CuDNNLSTM
 
 import unicodedata
 import re
@@ -20,8 +21,12 @@ import string, os
 
 print ("Imports complete...")
 #%% Data Cleaning and Dataset Generation
-import pandas as pd
-data = pd.read_csv("emails.csv", nrows = 1000)
+SEP = os.sep # seperator "\" vs "/" for windows vs UNIX-based
+DIR_PATH = os.path.dirname(os.path.realpath(__file__)) + SEP
+DATA_PATH = DIR_PATH + SEP + "sample_data" + SEP
+
+data = pd.read_csv(DATA_PATH + "emails.csv", nrows = 1000)
+
 pd.set_option('display.max_colwidth', None) # -1 max_colwidth deprecated
 new = data["message"].str.split("\n", n = 15, expand = True) 
 
@@ -49,9 +54,10 @@ regex = "(http|https)://"
 view = view[~(view.msg.str.contains(regex))]
 
 # save msgs as txt
-to_csv(r'c:\data\pandas.txt', header=None, index=None, sep=' ', mode='a')
+# view.msg.to_csv(r'./sample_data/dataset.txt', header=None, index=None, sep=' ', mode='a') # unfortunately writes strings encapsulated in quotations
+np.savetxt(DATA_PATH + 'dataset_test.txt', view.msg, fmt='%s')
 
-file = open("./sample_data/dataset.txt", 'r')
+file = open(DATA_PATH + "dataset_test.txt", 'r')
 corpus = [line for line in file]
 print ("Data cleaning and dataset generation complete...")
 corpus[40:50]
@@ -139,7 +145,6 @@ target_data = target_data[p]
 
 print ("Data pre-processing complete...")
 #%% Load Model Params
-pd.set_option('display.max_colwidth', -1)
 BUFFER_SIZE = len(input_data)
 BATCH_SIZE = 128
 embedding_dim = 300
@@ -155,10 +160,10 @@ encoder_inputs = Input(shape=(len_input,))
 encoder_emb = Embedding(input_dim=vocab_in_size, output_dim=embedding_dim)
 
 # Use this if you dont need Bidirectional LSTM
-# encoder_lstm = LSTM(units=units, return_sequences=True, return_state=True)
+# encoder_lstm = CuDNNLSTM(units=units, return_sequences=True, return_state=True)
 # encoder_out, state_h, state_c = encoder_lstm(encoder_emb(encoder_inputs))
 
-encoder_lstm = Bidirectional(LSTM(units=units, return_sequences=True, return_state=True))
+encoder_lstm = Bidirectional(CuDNNLSTM(units=units, return_sequences=True, return_state=True))
 encoder_out, fstate_h, fstate_c, bstate_h, bstate_c = encoder_lstm(encoder_emb(encoder_inputs))
 state_h = Concatenate()([fstate_h,bstate_h])
 state_c = Concatenate()([bstate_h,bstate_c])
@@ -168,7 +173,7 @@ encoder_states = [state_h, state_c]
 # Now create the Decoder layers.
 decoder_inputs = Input(shape=(None,))
 decoder_emb = Embedding(input_dim=vocab_out_size, output_dim=embedding_dim)
-decoder_lstm = LSTM(units=units*2, return_sequences=True, return_state=True)
+decoder_lstm = CuDNNLSTM(units=units*2, return_sequences=True, return_state=True)
 decoder_lstm_out, _, _ = decoder_lstm(decoder_emb(decoder_inputs), initial_state=encoder_states)
 # Two dense layers added to this model to improve inference capabilities.
 decoder_d1 = Dense(units, activation="relu")
@@ -226,11 +231,17 @@ inf_model = Model(inputs=[inf_decoder_inputs, state_input_h, state_input_c],
 # Converts the given sentence (just a string) into a vector of word IDs
 # Output is 1-D: [timesteps/words]
 
+def catch(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except Exception as e:
+        pass
+
 def sentence_to_vector(sentence, lang):
 
     pre = sentence
     vec = np.zeros(len_input)
-    sentence_list = [lang.word2idx[s] for s in pre.split(' ')]
+    sentence_list = [catch(lambda: lang.word2idx[s]) for s in pre.split(' ')]
     for i,w in enumerate(sentence_list):
         vec[i] = w
     return vec
