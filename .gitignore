@@ -1,6 +1,7 @@
 # dataset
-*.csv
-*.txt
+sample_data/*.csv
+sample_data/*.txt
+sample_data/*.json
 
 # VSCode
 .vscode/
