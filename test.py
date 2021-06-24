@@ -77,7 +77,7 @@ def preprocess(data):
     return output  
 
 
-def generate_dataset():
+def generate_dataset(corpus):
   
     processed_corpus = preprocess(corpus)    
     output = []
@@ -114,8 +114,8 @@ class LanguageIndex():
 def max_length(t):
     return max(len(i) for i in t)
 
-def load_dataset():
-    pairs,df = generate_dataset()
+def load_dataset(corpus):
+    pairs,df = generate_dataset(corpus)
     out_lang = LanguageIndex(sp for en, sp in pairs)
     in_lang = LanguageIndex(en for en, sp in pairs)
     input_data = [[in_lang.word2idx[s] for s in en.split(' ')] for en, sp in pairs]
@@ -128,7 +128,7 @@ def load_dataset():
 
 print ("Data preprocessing functions loaded...")
 #%% Data pre-processing
-input_data, teacher_data, input_lang, target_lang, len_input, len_target, df = load_dataset()
+input_data, teacher_data, input_lang, target_lang, len_input, len_target, df = load_dataset(corpus)
 
 
 target_data = [[teacher_data[n][i+1] for i in range(len(teacher_data[n])-1)] for n in range(len(teacher_data))]
