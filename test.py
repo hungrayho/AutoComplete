@@ -27,7 +27,7 @@ DATA_PATH = DIR_PATH + SEP + "sample_data" + SEP
 
 data = pd.read_csv(DATA_PATH + "emails.csv", nrows = 1000)
 
-pd.set_option('display.max_colwidth', None) # -1 max_colwidth deprecated
+# pd.set_option('display.max_colwidth', None) # -1 max_colwidth deprecated
 new = data["message"].str.split("\n", n = 15, expand = True) 
 
 data["from"] = new[2]
