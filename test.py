@@ -185,6 +185,9 @@ decoder_out = decoder_d2(Dropout(rate=.2)(decoder_d1(Dropout(rate=.2)(decoder_ls
 # Note that this model has three inputs:
 model = Model(inputs = [encoder_inputs, decoder_inputs], outputs= decoder_out)
 
+# early stoppage callback
+callback = callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+
 # We'll use sparse_categorical_crossentropy so we don't have to expand decoder_out into a massive one-hot array.
 # Adam is used because it's, well, the best.
 
@@ -194,11 +197,12 @@ model.summary()
 
 #%% Train Model
 # Note, we use 20% of our data for validation.
-epochs = 10
+epochs = 1000
 history = model.fit([input_data, teacher_data], target_data,
                  batch_size= BATCH_SIZE,
                  epochs=epochs,
-                 validation_split=0.2)
+                 validation_split=0.2,
+                 callbacks=[callback])
 
 print ("Model successfuly trained...")
 #%% Plot training history
