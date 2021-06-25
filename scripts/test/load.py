@@ -46,6 +46,10 @@ with tf.keras.backend.get_session() as sess:
 print("loaded")
 
 #%% Create inference model
+"""
+N.B. this is copied from the test.py script--use to reverse engineer an inference script
+TODO: inference script
+"""
 # Create the encoder model from the tensors we previously declared.
 encoder_model = Model(encoder_inputs, [encoder_out, state_h, state_c])
 
