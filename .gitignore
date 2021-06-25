@@ -4,6 +4,8 @@ data/*.txt
 data/*.json
 sample_data/*.txt
 sample_data/*.json
+model/model_num_test.json
+model/model_num_test.h5
 
 # VSCode
 .vscode/
