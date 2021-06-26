@@ -4,6 +4,23 @@ from abc import ABC, abstractmethod
 class meta_inference_engine(ABC):
     
     @abstractmethod
+    def __init__():
+
+        @abstractmethod
+        def load_word_index():
+            pass
+        
+        @abstractmethod
+        def load_model():
+            pass
+        
+        pass
+
+    @abstractmethod
+    def __catch():
+        pass
+
+    @abstractmethod
     def sentence_to_vector():
         pass
 
