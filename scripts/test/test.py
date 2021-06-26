@@ -23,6 +23,9 @@ import pandas as pd
 import numpy as np
 import string, os 
 
+# save language index
+import pickle
+
 print ("Imports complete...")
 #%% Data Cleaning and Dataset Generation
 SEP = os.sep # seperator "\" vs "/" for windows vs UNIX-based
@@ -148,6 +151,13 @@ teacher_data = teacher_data[p]
 target_data = target_data[p]
 
 print ("Data pre-processing complete...")
+#%% save language index
+
+with open(DATA_PATH + 'language_index.pkl', 'wb') as pkl_file:
+      
+    # A new file will be created
+    pickle.dump(target_lang, pkl_file)
+
 #%% Load Model Params
 BUFFER_SIZE = len(input_data)
 BATCH_SIZE = 128
