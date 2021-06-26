@@ -6,20 +6,24 @@ from tensorflow.keras.models import load_model
 Initialize model from JSON and reload weights
 1. load json and create model
 '''
-with open("dec_model_num.json", "rb") as dec_json_file:
-    loaded_dec_model_json = dec_json_file.read()
-    loaded_dec_model = model_from_json(loaded_dec_model_json)
+# TODO: settings.py/config file
+MODEL_DIR = os.sep + "sample_data" + os.sep
 
-with open("enc_model_num.json", "rb") as enc_json_file:
-    loaded_enc_model_json = enc_json_file.read()
-    loaded_enc_model = model_from_json(loaded_enc_model_json)
+with open(MODEL_DIR + "dec_model_num.json", "rb") as dec_json_file:
+    dec_model_json = dec_json_file.read()
+    dec_model = model_from_json(dec_model_json)
 
-enc_json_file.close()
 dec_json_file.close()
 
+with open(MODEL_DIR + "enc_model_num.json", "rb") as enc_json_file:
+    enc_model_json = enc_json_file.read()
+    enc_model = model_from_json(enc_model_json)
+
+enc_json_file.close()
+
 ### 2.load weights into new model
-loaded_dec_model.load_weights("dec_model_num.h5")
-loaded_enc_model.load_weights("enc_model_num.h5")
+dec_model.load_weights(MODEL_DIR + "dec_model_num.h5")
+enc_model.load_weights(MODEL_DIR + "enc_model_num.h5")
 print("Loaded models from disk")
 
 tf.keras.backend.set_learning_phase(0) # Ignore dropout at inference
@@ -34,38 +38,16 @@ with tf.keras.backend.get_session() as sess:
     tf.saved_model.simple_save(
         sess,
         './encoder_model/1',
-        inputs={'input_image': loaded_enc_model.input},
-        outputs={t.name:t for t in loaded_enc_model.outputs})
+        inputs={'input_image': enc_model.input},
+        outputs={t.name:t for t in enc_model.outputs})
     tf.saved_model.simple_save(
         sess,
         './decoder_model/1',
-        inputs ={t.name:t for t in loaded_dec_model.input},
-        outputs={t.name:t for t in loaded_dec_model.outputs})
+        inputs ={t.name:t for t in dec_model.input},
+        outputs={t.name:t for t in dec_model.outputs})
 
 
 print("loaded")
-
-#%% Create inference model
-"""
-N.B. this is copied from the test.py script--use to reverse engineer an inference script
-TODO: inference script
-"""
-# Create the encoder model from the tensors we previously declared.
-encoder_model = Model(encoder_inputs, [encoder_out, state_h, state_c])
-
-# Generate a new set of tensors for our new inference decoder. Note that we are using new tensors, 
-# this does not preclude using the same underlying layers that we trained on. (e.g. weights/biases).
-
-inf_decoder_inputs = Input(shape=(None,), name="inf_decoder_inputs")
-# We'll need to force feed the two state variables into the decoder each step.
-state_input_h = Input(shape=(units*2,), name="state_input_h")
-state_input_c = Input(shape=(units*2,), name="state_input_c")
-decoder_res, decoder_h, decoder_c = decoder_lstm(
-    decoder_emb(inf_decoder_inputs), 
-    initial_state=[state_input_h, state_input_c])
-inf_decoder_out = decoder_d2(decoder_d1(decoder_res))
-inf_model = Model(inputs=[inf_decoder_inputs, state_input_h, state_input_c], 
-                  outputs=[inf_decoder_out, decoder_h, decoder_c])
 
 #%% Model test inference functions
 # Converts the given sentence (just a string) into a vector of word IDs
@@ -139,7 +121,7 @@ test = [
 import pandas as pd
 output = []  
 for t in test:  
-  output.append({"Input seq":t.lower(), "Pred. Seq":translate(t.lower(), encoder_model, inf_model)})
+  output.append({"Input seq":t.lower(), "Pred. Seq":translate(t.lower(), enc_model, dec_model)})
 
 results_df = pd.DataFrame.from_dict(output) 
 results_df.head(len(test))

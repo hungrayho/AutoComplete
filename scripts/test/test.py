@@ -8,6 +8,10 @@ from tensorflow.python.keras.utils import tf_utils
 from tensorflow.keras import backend as K
 from tensorflow.compat.v1.keras.layers import CuDNNLSTM
 
+# This is to save the model for the web app to use for generation
+from keras.models import model_from_json
+from keras.models import load_model
+
 import unicodedata
 import re
 import numpy as np
@@ -231,6 +235,38 @@ inf_decoder_out = decoder_d2(decoder_d1(decoder_res))
 inf_model = Model(inputs=[inf_decoder_inputs, state_input_h, state_input_c], 
                   outputs=[inf_decoder_out, decoder_h, decoder_c])
 
+#%% save inference model
+"""
+1. save encoder model json
+2. save encoder model weights
+3. save inference model json
+4. save inference model weights
+"""
+MODEL_DIR = os.sep + "sample_data" + os.sep
+
+# serialize model to JSON
+#  the keras model which is trained is defined as 'model' in this example
+enc_model_json = encoder_model.to_json()
+
+with open(MODEL_DIR + "enc_model_num.json", "w") as json_file:
+    json_file.write(enc_model_json)
+
+# serialize weights to HDF5
+encoder_model.save_weights(MODEL_DIR + "enc_model_num.h5")
+
+
+# serialize model to JSON
+#  the keras model which is trained is defined as 'model' in this example
+inf_model_json = inf_model.to_json()
+
+with open(MODEL_DIR + "dec_model_num.json", "w") as json_file:
+    json_file.write(inf_model_json)
+
+# serialize weights to HDF5
+inf_model.save_weights(MODEL_DIR + "dec_model_num.h5")
+
+print ("Model successfuly saved...")
+
 #%% Model test inference functions
 # Converts the given sentence (just a string) into a vector of word IDs
 # Output is 1-D: [timesteps/words]
@@ -307,21 +343,3 @@ for t in test:
 
 results_df = pd.DataFrame.from_dict(output) 
 results_df.head(len(test))
-
-#%% Saving Model
-# This is to save the model for the web app to use for generation
-from keras.models import model_from_json
-from keras.models import load_model
-
-# serialize model to JSON
-#  the keras model which is trained is defined as 'model' in this example
-model_json = inf_model.to_json()
-
-
-with open("./sample_data/model_num.json", "w") as json_file:
-    json_file.write(model_json)
-
-# serialize weights to HDF5
-inf_model.save_weights("./sample_data/model_num.h5")
-
-print ("Model successfuly saved...")
