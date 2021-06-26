@@ -7,17 +7,13 @@ class meta_inference_engine(ABC):
     def __init__():
 
         @abstractmethod
-        def load_word_index():
+        def load_lang_index():
             pass
         
         @abstractmethod
         def load_model():
             pass
-        
-        pass
 
-    @abstractmethod
-    def __catch():
         pass
 
     @abstractmethod
