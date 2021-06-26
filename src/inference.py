@@ -109,8 +109,8 @@ class inference_engine(meta_inference_engine):
         [emb_out, sh, sc] = infenc_model.predict(x=sv)
         
         i = 0
-        start_vec = target_lang.word2idx["<start>"]
-        stop_vec = target_lang.word2idx["<end>"]
+        start_vec = self._target_lang.word2idx["<start>"]
+        stop_vec = self._target_lang.word2idx["<end>"]
         
         cur_vec = np.zeros((1,1))
         cur_vec[0,0] = start_vec
@@ -124,7 +124,7 @@ class inference_engine(meta_inference_engine):
             x_in = [cur_vec, sh, sc]
             [nvec, sh, sc] = infmodel.predict(x=x_in)
             cur_vec[0,0] = np.argmax(nvec[0,0])
-            cur_word = target_lang.idx2word[np.argmax(nvec[0,0])]
+            cur_word = self._target_lang.idx2word[np.argmax(nvec[0,0])]
         return output_sentence
 
     @classmethod
