@@ -9,8 +9,8 @@ from tensorflow.keras import backend as K
 from tensorflow.compat.v1.keras.layers import CuDNNLSTM
 
 # This is to save the model for the web app to use for generation
-from keras.models import model_from_json
-from keras.models import load_model
+from tf.keras.models import model_from_json
+from tf.keras.models import load_model
 
 import unicodedata
 import re
@@ -31,7 +31,7 @@ print ("Imports complete...")
 #%% config
 SEP = os.sep # seperator "\" for windows and "/" for UNIX-based
 DIR_PATH = os.path.dirname(os.path.realpath(__file__)) + SEP
-DATA_PATH = DIR_PATH + SEP + "sample_data" + SEP
+DATA_PATH = DIR_PATH + "sample_data" + SEP
 CHECKPOINT_PATH = DATA_PATH + "checkpoints" + SEP
 
 #%% Data Cleaning and Dataset Generation
@@ -230,6 +230,7 @@ history = model.fit([input_data, teacher_data], target_data,
                  callbacks=[early_stop, checkpoint])
 
 print ("Model successfuly trained...")
+
 #%% Plot training history
 # Plot the results of the training.
 import matplotlib.pyplot as plt
