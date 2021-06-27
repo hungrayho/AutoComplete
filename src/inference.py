@@ -147,5 +147,3 @@ class inference_engine(meta_inference_engine):
     
     self.load_lang_index()
     self.load_model()
-
-# TODO: modify pickle load language index
