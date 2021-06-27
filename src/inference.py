@@ -20,14 +20,22 @@ class inference_engine(meta_inference_engine):
         # attributes
         self._enc_model = None
         self._dec_model = None
-        self._target_lang = None
+        self._word2idx = {}
+        self._idx2word = {}
         
 
         @classmethod
         def load_lang_index(): # TODO: load word index
-            with open(self.MODEL_DIR + 'language_index.pkl', 'rb') as pkl_file:
-
-                self._target_lang = pickle.load(pkl_file)
+            
+            if not target_lang.word2idx:
+                # load word2idx
+                with open(DATA_PATH + 'word2idx.pkl', 'wb') as pkl_file:
+                    self._word2idx = pickle.load(pkl_file)
+            
+            if not target_lang.idx2word:
+                #load idx2word
+                with open(DATA_PATH + 'idx2word.pkl', 'wb') as pkl_file:
+                    self._idx2word = pickle.load(pkl_file)
 
 
         @classmethod
@@ -109,8 +117,8 @@ class inference_engine(meta_inference_engine):
         [emb_out, sh, sc] = infenc_model.predict(x=sv)
         
         i = 0
-        start_vec = self._target_lang.word2idx["<start>"]
-        stop_vec = self._target_lang.word2idx["<end>"]
+        start_vec = self._word2idx["<start>"]
+        stop_vec = self._word2idx["<end>"]
         
         cur_vec = np.zeros((1,1))
         cur_vec[0,0] = start_vec
@@ -124,7 +132,7 @@ class inference_engine(meta_inference_engine):
             x_in = [cur_vec, sh, sc]
             [nvec, sh, sc] = infmodel.predict(x=x_in)
             cur_vec[0,0] = np.argmax(nvec[0,0])
-            cur_word = self._target_lang.idx2word[np.argmax(nvec[0,0])]
+            cur_word = self._idx2word[np.argmax(nvec[0,0])]
         return output_sentence
 
     @classmethod
@@ -139,3 +147,5 @@ class inference_engine(meta_inference_engine):
     
     self.load_lang_index()
     self.load_model()
+
+# TODO: modify pickle load language index
