@@ -27,11 +27,14 @@ import string, os
 import pickle
 
 print ("Imports complete...")
-#%% Data Cleaning and Dataset Generation
-SEP = os.sep # seperator "\" vs "/" for windows vs UNIX-based
+
+#%% config
+SEP = os.sep # seperator "\" for windows and "/" for UNIX-based
 DIR_PATH = os.path.dirname(os.path.realpath(__file__)) + SEP
 DATA_PATH = DIR_PATH + SEP + "sample_data" + SEP
+CHECKPOINT_PATH = DATA_PATH + "checkpoints" + SEP
 
+#%% Data Cleaning and Dataset Generation
 data = pd.read_csv(DATA_PATH + "emails.csv", nrows = 1000)
 
 # pd.set_option('display.max_colwidth', None) # -1 max_colwidth deprecated
@@ -154,7 +157,7 @@ print ("Data pre-processing complete...")
 #%% save language index
 
 with open(DATA_PATH + 'language_index.pkl', 'wb') as pkl_file:
-      
+
     # A new file will be created
     pickle.dump(target_lang, pkl_file)
 
@@ -199,8 +202,16 @@ decoder_out = decoder_d2(Dropout(rate=.2)(decoder_d1(Dropout(rate=.2)(decoder_ls
 # Note that this model has three inputs:
 model = Model(inputs = [encoder_inputs, decoder_inputs], outputs= decoder_out)
 
-# early stoppage callback
-callback = callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+
+# callbacks
+early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+checkpoint = tf.keras.callbacks.ModelCheckpoint(
+    filepath= CHECKPOINT_DIR + "weights.{epoch:02d}-{val_loss:.2f}.hdf5",
+    save_weights_only=True,
+    monitor='val_accuracy',
+    mode='max',
+    save_best_only=False)
+
 
 # We'll use sparse_categorical_crossentropy so we don't have to expand decoder_out into a massive one-hot array.
 # Adam is used because it's, well, the best.
@@ -216,7 +227,7 @@ history = model.fit([input_data, teacher_data], target_data,
                  batch_size= BATCH_SIZE,
                  epochs=epochs,
                  validation_split=0.2,
-                 callbacks=[callback])
+                 callbacks=[early_stop, checkpoint])
 
 print ("Model successfuly trained...")
 #%% Plot training history
