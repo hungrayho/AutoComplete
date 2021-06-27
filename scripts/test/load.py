@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow.keras.models import model_from_json
 from tensorflow.keras.models import load_model
 
+import os
+
 '''
 Initialize model from JSON and reload weights
 1. load json and create model
@@ -48,6 +50,60 @@ with tf.keras.backend.get_session() as sess:
 
 
 print("loaded")
+
+#%% load model
+'''
+Initialize model from JSON and reload weights
+1. load json and create model
+'''
+
+MODEL_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep + "model" + os.sep
+
+with open("model_num_test.json", "rb") as model_json_file:
+    loaded_model_json = model_json_file.read()
+    loaded_model = model_from_json(loaded_model_json)
+
+model_json_file.close()
+
+loaded_model.load_weights("model_num_test.h5")
+
+print("Loaded models from disk")
+
+#%% 
+tf.keras.backend.set_learning_phase(0) # Ignore dropout at inference
+
+'''
+Fetch the Keras session and save the model
+The signature definition is defined by the input and output tensors
+And stored with the default serving key
+'''
+
+with tf.keras.backend.get_session() as sess:
+    tf.saved_model.simple_save(
+        sess,
+        './encoder_model/1',
+        inputs={'input_image': loaded_enc_model.input},
+        outputs={t.name:t for t in loaded_enc_model.outputs})
+
+print("loaded")
+
+#%% Create inference model
+# Create the encoder model from the tensors we previously declared.
+encoder_model = Model(encoder_inputs, [encoder_out, state_h, state_c])
+
+# Generate a new set of tensors for our new inference decoder. Note that we are using new tensors, 
+# this does not preclude using the same underlying layers that we trained on. (e.g. weights/biases).
+
+inf_decoder_inputs = Input(shape=(None,), name="inf_decoder_inputs")
+# We'll need to force feed the two state variables into the decoder each step.
+state_input_h = Input(shape=(units*2,), name="state_input_h")
+state_input_c = Input(shape=(units*2,), name="state_input_c")
+decoder_res, decoder_h, decoder_c = decoder_lstm(
+    decoder_emb(inf_decoder_inputs), 
+    initial_state=[state_input_h, state_input_c])
+inf_decoder_out = decoder_d2(decoder_d1(decoder_res))
+inf_model = Model(inputs=[inf_decoder_inputs, state_input_h, state_input_c], 
+                  outputs=[inf_decoder_out, decoder_h, decoder_c])
 
 #%% Model test inference functions
 # Converts the given sentence (just a string) into a vector of word IDs
