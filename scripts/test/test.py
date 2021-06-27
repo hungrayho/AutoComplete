@@ -250,6 +250,24 @@ try:
 except OSError as e:
     print(e)
 
+#%% load language index
+"""
+class LanguageIndex():
+    self.word2idx = {}
+    self.idx2word = {}
+
+target_lang = LanguageIndex()
+"""
+
+if not target_lang.word2idx:
+    # load word2idx
+    with open(DATA_PATH + 'word2idx.pkl', 'wb') as pkl_file:
+        target_lang.word2idx = pickle.load(pkl_file)
+
+if not target_lang.idx2word:
+    #load idx2word
+    with open(DATA_PATH + 'idx2word.pkl', 'wb') as pkl_file:
+        target_lang.idx2word = pickle.load(pkl_file)
 
 #%% Train Model
 # Note, we use 20% of our data for validation.
