@@ -88,7 +88,7 @@ class inference_engine(meta_inference_engine):
             pass
 
     @classmethod
-    def sentence_to_vector(sentence, lang):
+    def __sentence_to_vector(sentence, lang):
         """
         converts sentence to word vector
         """
@@ -100,11 +100,11 @@ class inference_engine(meta_inference_engine):
         return vec
 
     @classmethod
-    def translate(input_sequence, inf_enc_model, inf_model):
+    def __translate(input_sequence, inf_enc_model, inf_model):
         """
         runs model inference on input sequence, returns output_sentence
         """
-        sv = sentence_to_vector(input_sentence, input_lang)
+        sv = __sentence_to_vector(input_sentence, input_lang)
         sv = sv.reshape(1,len(sv))
         [emb_out, sh, sc] = infenc_model.predict(x=sv)
         
@@ -129,8 +129,11 @@ class inference_engine(meta_inference_engine):
 
     @classmethod
     def predict(payload):
+        """
+        public method runs inference for payload string
+        """
         try:
-            return self.translate(payload.lower())
+            return self.__translate(payload.lower())
         except Error:
             return str(Error)
     
