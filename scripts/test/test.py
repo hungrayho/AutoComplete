@@ -9,8 +9,8 @@ from tensorflow.keras import backend as K
 from tensorflow.compat.v1.keras.layers import CuDNNLSTM
 
 # This is to save the model for the web app to use for generation
-from tf.keras.models import model_from_json
-from tf.keras.models import load_model
+from tensorflow.keras.models import model_from_json
+from tensorflow.keras.models import load_model
 
 import unicodedata
 import re
@@ -156,10 +156,15 @@ target_data = target_data[p]
 print ("Data pre-processing complete...")
 #%% save language index
 
-with open(DATA_PATH + 'language_index.pkl', 'wb') as pkl_file:
+with open(DATA_PATH + 'word2idx.pkl', 'wb') as pkl_file:
 
     # A new file will be created
-    pickle.dump(target_lang, pkl_file)
+    pickle.dump(target_lang.word2idx, pkl_file)
+
+with open(DATA_PATH + 'idx2word.pkl', 'wb') as pkl_file:
+
+    # A new file will be created
+    pickle.dump(target_lang.idx2word, pkl_file)
 
 #%% Load Model Params
 BUFFER_SIZE = len(input_data)
@@ -206,7 +211,7 @@ model = Model(inputs = [encoder_inputs, decoder_inputs], outputs= decoder_out)
 # callbacks
 early_stop = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
 checkpoint = tf.keras.callbacks.ModelCheckpoint(
-    filepath= CHECKPOINT_DIR + "weights.{epoch:02d}-{val_loss:.2f}.hdf5",
+    filepath= CHECKPOINT_PATH + "weights.{epoch:02d}-{val_loss:.2f}.hdf5",
     save_weights_only=True,
     monitor='val_accuracy',
     mode='max',
@@ -219,6 +224,32 @@ checkpoint = tf.keras.callbacks.ModelCheckpoint(
 model.compile(optimizer=tf.train.AdamOptimizer(), loss="sparse_categorical_crossentropy", metrics=['sparse_categorical_accuracy'])
 print ("Model successfully compiled...")
 model.summary()
+
+#%% loading model checkpoints
+# check if folder is empty
+has_checkpoint = False
+if not os.listdir(CHECKPOINT_PATH):
+    has_checkpoint = False
+else:
+    has_checkpoint = True
+
+
+# collect user input
+CHECKPOINT_FILE = None
+
+from os import listdir
+from os.path import isfile, join
+print ([f for f in listdir(CHECKPOINT_PATH) if isfile(join(CHECKPOINT_PATH, f))]) # list checkpoints
+
+CHECKPOINT_FILE = input("Enter checkpoint filename: ")
+
+
+# load the weights
+try:
+    model.load_weights(CHECKPOINT_PATH + CHECKPOINT_FILE)
+except OSError as e:
+    print(e)
+
 
 #%% Train Model
 # Note, we use 20% of our data for validation.
